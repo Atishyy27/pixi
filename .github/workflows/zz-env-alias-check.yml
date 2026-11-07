@@ -1,0 +1,22 @@
+name: env-alias-check
+on:
+  push:
+    branches: [ci-6756]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: fmt diff (informational)
+        run: cargo fmt -p pixi_manifest -- --check || (cargo fmt -p pixi_manifest && git diff > fmt.patch && cat fmt.patch && exit 1)
+      - run: cargo test -p pixi_manifest --lib environment
+      - run: cargo clippy -p pixi_manifest --all-targets --no-deps -- -D warnings
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          run-install: false
+      - name: regenerate schema and show the diff
+        run: pixi run generate-schema && git diff --stat && git diff schema/ | head -80
