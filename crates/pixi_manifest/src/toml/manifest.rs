@@ -396,15 +396,18 @@ impl TomlManifest {
 
         // Add all named environments
         let mut features_used_by_environments = HashSet::new();
+        let mut aliases: HashMap<EnvironmentName, EnvironmentName> = HashMap::new();
+        let environment_names: HashSet<EnvironmentName> = toml_environments.keys().cloned().collect();
         for (name, env) in toml_environments {
             // Decompose the TOML
-            let (inline, included_features, features_span, solve_group, no_default_feature) =
+            let (inline, included_features, features_span, solve_group, no_default_feature, alias) =
                 match env {
                     TomlEnvironmentList::Map(env) => {
                         let TomlEnvironment {
                             features,
                             solve_group,
                             no_default_feature,
+                            alias,
                             inline,
                         } = *env;
                         let (features, features_span) = features.map_or_else(
@@ -417,10 +420,11 @@ impl TomlManifest {
                             features_span,
                             solve_group,
                             no_default_feature,
+                            alias,
                         )
                     }
                     TomlEnvironmentList::Seq(features) => {
-                        (None, features.value, Some(features.span), None, false)
+                        (None, features.value, Some(features.span), None, false, None)
                     }
                 };
 
@@ -538,13 +542,52 @@ impl TomlManifest {
                 feature_names.insert(0, feature_name);
             }
 
+            let alias = alias
+                .map(|Spanned { value, span }| {
+                    let alias_name = EnvironmentName::from_str(&value).map_err(|e| {
+                        TomlError::from(GenericError::new(e.to_string()).with_span(span.into()))
+                    })?;
+                    if alias_name == name {
+                        return Err(TomlError::from(
+                            GenericError::new(format!(
+                                "The alias '{alias_name}' is the same as the name of its environment"
+                            ))
+                            .with_span(span.into()),
+                        ));
+                    }
+                    if alias_name == EnvironmentName::Default
+                        || environment_names.contains(&alias_name)
+                    {
+                        return Err(TomlError::from(
+                            GenericError::new(format!(
+                                "The alias '{alias_name}' conflicts with an environment of the same name"
+                            ))
+                            .with_span(span.into()),
+                        ));
+                    }
+                    if let Some(other) = aliases.insert(alias_name.clone(), name.clone()) {
+                        return Err(TomlError::from(
+                            GenericError::new(format!(
+                                "The alias '{alias_name}' is already used by the environment '{other}'"
+                            ))
+                            .with_span(span.into()),
+                        ));
+                    }
+                    Ok(alias_name)
+                })
+                .transpose()?;
+
             let environment_idx = EnvironmentIdx(environments.environments.len());
             environments.by_name.insert(name.clone(), environment_idx);
+            if let Some(alias) = &alias {
+                environments.by_alias.insert(alias.clone(), environment_idx);
+            }
             environments.environments.push(Some(Environment {
                 name,
                 features: feature_names,
                 solve_group: solve_group.map(|sg| solve_groups.add(sg, environment_idx)),
                 no_default_feature,
+                alias,
             }));
         }
 
@@ -3481,6 +3524,64 @@ mod test {
             vec![FeatureName::environment(&EnvironmentName::Default)]
         );
         assert!(!default.no_default_feature);
+    }
+
+    #[test]
+    fn test_environment_alias_resolves() {
+        let manifest = WorkspaceManifest::from_toml_str_with_base_dir(
+            r#"
+        [workspace]
+        name = "foo"
+        channels = []
+        platforms = ["linux-64"]
+
+        [feature.python.dependencies]
+        python = "*"
+
+        [environments]
+        development = { features = ["python"], alias = "dev" }
+        "#,
+            Path::new(""),
+        )
+        .unwrap();
+
+        let by_alias = manifest.environment("dev").expect("alias resolves");
+        assert_eq!(by_alias.name.as_str(), "development");
+        assert_eq!(
+            by_alias.alias.as_ref().map(EnvironmentName::as_str),
+            Some("dev")
+        );
+        assert!(manifest.environment("development").is_some());
+    }
+
+    #[test]
+    fn test_environment_alias_conflicts() {
+        let parse = |envs: &str| {
+            WorkspaceManifest::from_toml_str_with_base_dir(
+                &format!(
+                    "[workspace]\nname = \"foo\"\nchannels = []\nplatforms = [\"linux-64\"]\n\n[feature.a]\n\n[environments]\n{envs}"
+                ),
+                Path::new(""),
+            )
+            .unwrap_err()
+            .to_string()
+        };
+
+        // Alias equal to another environment's name
+        assert!(
+            parse("x = { features = [\"a\"], alias = \"y\" }\ny = [\"a\"]")
+                .contains("conflicts with an environment")
+        );
+        // Alias equal to its own environment's name
+        assert!(
+            parse("x = { features = [\"a\"], alias = \"x\" }")
+                .contains("same as the name of its environment")
+        );
+        // Alias used by two environments
+        assert!(
+            parse("x = { features = [\"a\"], alias = \"z\" }\ny = { features = [\"a\"], alias = \"z\" }")
+                .contains("already used by the environment")
+        );
     }
 
     #[test]

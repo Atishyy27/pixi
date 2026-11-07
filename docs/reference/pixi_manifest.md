@@ -1392,6 +1392,7 @@ The environments table is defined using the following fields:
   These dependencies will then be the same version in all environments that have the same solve group.
   But the different environments contain different subsets of the solve-groups dependencies set.
 - `no-default-feature`: Whether to include the default feature in that environment. The default is `false`, to include the default feature.
+- `alias`: An alternative name for the environment. It can be used wherever an environment name is accepted, for example `pixi run -e <alias>`. An alias must be unique and cannot be the name of an environment.
 
 Additionally, most fields that a [feature](#the-feature-table) accepts - `dependencies`, `pypi-dependencies`, `tasks`, `activation`, `channels`, `platforms`, `constraints`, `target` and more - can be set directly on an environment. See [Defining dependencies directly on an environment](#defining-dependencies-directly-on-an-environment).
 
@@ -1400,6 +1401,7 @@ Additionally, most fields that a [feature](#the-feature-table) accepts - `depend
 test = {features = ["test"], solve-group = "test"}
 prod = {features = ["prod"], solve-group = "test"}
 lint = {features = ["lint"], no-default-feature = true}
+development = {features = ["dev"], alias = "dev"}
 ```
 As shown in the example above, in the simplest of cases, it is possible to define an environment only by listing its features:
 
