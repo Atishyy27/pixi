@@ -3638,8 +3638,8 @@ mod test {
         git = "*"
         "#,
         ), @r###"
-          × Unexpected keys, expected only 'features', 'solve-group', 'no-default-feature', 'platforms', 'channels', 'channel-priority', 'solve-strategy', 'target', 'dependencies', 'pypi-dependencies',
-          │ 'dev', 'constraints', 'activation', 'tasks', 'pypi-options'
+          × Unexpected keys, expected only 'features', 'solve-group', 'no-default-feature', 'alias', 'platforms', 'channels', 'channel-priority', 'solve-strategy', 'target', 'dependencies', 'pypi-
+          │ dependencies', 'dev', 'constraints', 'activation', 'tasks', 'pypi-options'
            ╭─[pixi.toml:7:27]
          6 │
          7 │         [environments.dev.host-dependencies]
@@ -3697,8 +3697,8 @@ mod test {
         cuda = "12"
         "#,
         ), @r###"
-          × Unexpected keys, expected only 'features', 'solve-group', 'no-default-feature', 'platforms', 'channels', 'channel-priority', 'solve-strategy', 'target', 'dependencies', 'pypi-dependencies',
-          │ 'dev', 'constraints', 'activation', 'tasks', 'pypi-options'
+          × Unexpected keys, expected only 'features', 'solve-group', 'no-default-feature', 'alias', 'platforms', 'channels', 'channel-priority', 'solve-strategy', 'target', 'dependencies', 'pypi-
+          │ dependencies', 'dev', 'constraints', 'activation', 'tasks', 'pypi-options'
             ╭─[pixi.toml:10:27]
           9 │
          10 │         [environments.dev.system-requirements]
