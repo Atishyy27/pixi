@@ -397,7 +397,8 @@ impl TomlManifest {
         // Add all named environments
         let mut features_used_by_environments = HashSet::new();
         let mut aliases: HashMap<EnvironmentName, EnvironmentName> = HashMap::new();
-        let environment_names: HashSet<EnvironmentName> = toml_environments.keys().cloned().collect();
+        let environment_names: HashSet<EnvironmentName> =
+            toml_environments.keys().cloned().collect();
         for (name, env) in toml_environments {
             // Decompose the TOML
             let (inline, included_features, features_span, solve_group, no_default_feature, alias) =
@@ -3558,7 +3559,7 @@ mod test {
     fn test_environment_alias_conflicts() {
         let parse = |envs: &str| {
             WorkspaceManifest::from_toml_str_with_base_dir(
-                &format!(
+                format!(
                     "[workspace]\nname = \"foo\"\nchannels = []\nplatforms = [\"linux-64\"]\n\n[feature.a]\n\n[environments]\n{envs}"
                 ),
                 Path::new(""),
