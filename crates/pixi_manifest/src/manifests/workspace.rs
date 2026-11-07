@@ -795,6 +795,7 @@ impl WorkspaceManifestMut<'_> {
                 .collect(),
             solve_group: None,
             no_default_feature,
+            alias: None,
         });
 
         if let Some(solve_group) = solve_group {
@@ -847,6 +848,7 @@ impl WorkspaceManifestMut<'_> {
             features,
             solve_group: None,
             no_default_feature,
+            alias: None,
         });
 
         if let Some(solve_group) = solve_group {
@@ -969,7 +971,7 @@ impl WorkspaceManifestMut<'_> {
                 features: updated_features,
                 solve_group: None,
                 no_default_feature: env.no_default_feature,
-                alias: None,
+                alias: env.alias.clone(),
             });
 
             if let Some(solve_group) = solve_group {
