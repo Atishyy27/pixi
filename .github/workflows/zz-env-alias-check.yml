@@ -15,7 +15,14 @@ jobs:
       - name: fmt diff (informational)
         continue-on-error: true
         run: cargo fmt -p pixi_manifest && git diff --exit-code
-      - run: git checkout -- . && cargo test -p pixi_manifest --lib environment
+      - name: accept snapshots and print the diff
+        run: |
+          git checkout -- .
+          INSTA_UPDATE=always INSTA_FORCE_PASS=1 cargo test -p pixi_manifest --lib environment || true
+          git status --short
+          git diff -- '*.snap' > snap.patch; cat snap.patch; echo "SNAP_PATCH_END"
+          git ls-files --others --exclude-standard -- '*.snap.new' '*.snap'
+      - run: cargo test -p pixi_manifest --lib environment
       - run: cargo clippy -p pixi_manifest --all-targets --no-deps -- -D warnings
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
