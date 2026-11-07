@@ -10,10 +10,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
+      - run: rustup component add rustfmt clippy
       - uses: Swatinem/rust-cache@v2
       - name: fmt diff (informational)
-        run: cargo fmt -p pixi_manifest -- --check || (cargo fmt -p pixi_manifest && git diff > fmt.patch && cat fmt.patch && exit 1)
-      - run: cargo test -p pixi_manifest --lib environment
+        continue-on-error: true
+        run: cargo fmt -p pixi_manifest && git diff --exit-code
+      - run: git checkout -- . && cargo test -p pixi_manifest --lib environment
       - run: cargo clippy -p pixi_manifest --all-targets --no-deps -- -D warnings
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
