@@ -13,16 +13,19 @@ pub struct Environments {
 
     /// A map of all environments, indexed by their name.
     pub(crate) by_name: IndexMap<EnvironmentName, EnvironmentIdx>,
+
+    /// A map of environment aliases to the environment they refer to.
+    pub(crate) by_alias: IndexMap<EnvironmentName, EnvironmentIdx>,
 }
 
 impl Environments {
-    /// Returns the environment with the given name or `None` if it does not
-    /// exist.
+    /// Returns the environment with the given name or alias, or `None` if it
+    /// does not exist.
     pub fn find<Q>(&self, name: &Q) -> Option<&Environment>
     where
         Q: ?Sized + Hash + Equivalent<EnvironmentName>,
     {
-        let index = self.by_name.get(name)?;
+        let index = self.by_name.get(name).or_else(|| self.by_alias.get(name))?;
         self.environments[index.0].as_ref()
     }
 

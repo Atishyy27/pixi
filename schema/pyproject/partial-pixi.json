@@ -814,6 +814,12 @@
           "$ref": "#/$defs/Activation",
           "description": "The scripts used on the activation of this environment"
         },
+        "alias": {
+          "title": "Alias",
+          "description": "An alternative name that can be used to refer to this environment",
+          "type": "string",
+          "pattern": "^[a-z\\d\\-]+$"
+        },
         "channel-priority": {
           "$ref": "#/$defs/ChannelPriority",
           "description": "The type of channel priority that is used in the solve.\n- 'strict': only take the package from the channel it exist in first.\n- 'flexible': exhaust the candidates of higher-priority channels before falling back to the next channel, regardless of the version.\n- 'disabled': group all dependencies together as if there is no channel difference.",

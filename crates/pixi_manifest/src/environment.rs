@@ -215,6 +215,10 @@ pub struct Environment {
 
     /// Whether to include the default feature in that environment
     pub no_default_feature: bool,
+
+    /// An optional alternative name that resolves to this environment.
+    #[serde(default)]
+    pub alias: Option<EnvironmentName>,
 }
 
 #[cfg(test)]

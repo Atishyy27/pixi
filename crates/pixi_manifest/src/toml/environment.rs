@@ -26,6 +26,9 @@ pub struct TomlEnvironment {
     pub features: Option<Spanned<Vec<Spanned<String>>>>,
     pub solve_group: Option<String>,
     pub no_default_feature: bool,
+    /// An optional alternative name that can be used to refer to this
+    /// environment.
+    pub alias: Option<Spanned<String>>,
     /// Feature content defined directly on the environment. This is turned into
     /// an implicit feature that is prepended to the environment's features.
     pub inline: TomlEnvironmentInline,
@@ -158,6 +161,7 @@ impl<'de> toml_span::Deserialize<'de> for TomlEnvironment {
         let features = th.optional_s("features");
         let solve_group = th.optional("solve-group");
         let no_default_feature = th.optional("no-default-feature");
+        let alias = th.optional_s::<String>("alias");
 
         // Inline feature content. `host-dependencies`, `build-dependencies` and
         // `system-requirements` are intentionally not accepted here and are
@@ -227,6 +231,7 @@ impl<'de> toml_span::Deserialize<'de> for TomlEnvironment {
             features,
             solve_group,
             no_default_feature: no_default_feature.unwrap_or_default(),
+            alias,
             inline,
         })
     }
@@ -296,6 +301,18 @@ mod test {
                 map.features.clone().unwrap().value.into_iter().map(Spanned::take).collect::<Vec<_>>() == vec!["foo", "bar"]
                 && map.solve_group == Some("group".to_string())
                 && map.no_default_feature);
+    }
+
+    #[test]
+    pub fn test_parse_environment_alias() {
+        let input = r#"
+            env = { features = ["foo"], alias = "e" }
+        "#;
+
+        let toplevel = TopLevel::from_toml_str(input).unwrap();
+        assert_matches!(
+            toplevel.env,
+            TomlEnvironmentList::Map(map) if map.alias.as_ref().map(|a| a.value.as_str()) == Some("e"));
     }
 
     #[test]
